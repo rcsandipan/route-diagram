@@ -150,14 +150,14 @@
       </p>
     </div>
 
-    <div class="controls">
+    <!-- <div class="controls">
       <label>
-        <input type="checkbox" id="compressGoodSections" checked> Compress good sections > 500m
+        <input type="checkbox" id="compressGoodSections" checked> Compress long sections > 500m
       </label>
       <label>
         <input type="checkbox" id="emphasizeBadSections" checked> Emphasize bad sections
       </label>
-    </div>
+    </div> -->
 
     <textarea id="inputData" placeholder="Example:
 Northgate TE,23.8396,91.282,200,bad,hdd,bridge
@@ -192,16 +192,16 @@ const disablePage = () => {
   });
   document.getElementById('inputData').disabled = true;
   document.getElementById('routeName').disabled = true;
-  document.getElementById('compressGoodSections').disabled = true;
-  document.getElementById('emphasizeBadSections').disabled = true;
+  // document.getElementById('compressGoodSections').disabled = true;
+  // document.getElementById('emphasizeBadSections').disabled = true;
 };
 
 const enablePage = () => {
   document.querySelectorAll('button').forEach(btn => btn.disabled = false);
   document.getElementById('inputData').disabled = false;
   document.getElementById('routeName').disabled = false;
-  document.getElementById('compressGoodSections').disabled = false;
-  document.getElementById('emphasizeBadSections').disabled = false;
+  // document.getElementById('compressGoodSections').disabled = false;
+  // document.getElementById('emphasizeBadSections').disabled = false;
 };
 
 // Initially disable page content before login
@@ -262,7 +262,7 @@ function drawDiagram() {
   // Layout constants
   const marginX = 60;
   const maxX = canvas.width - marginX;
-  const topMargin = 200;
+  const topMargin = 250;
   const rowHeight = 220;
   const roadGap = 50;
   const ofcGap = 10;
@@ -271,8 +271,8 @@ function drawDiagram() {
   const interSegmentGap = 5;
   
   // Get scaling preferences
-  const compressGoodSections = document.getElementById('compressGoodSections').checked;
-  const emphasizeBadSections = document.getElementById('emphasizeBadSections').checked;
+  // const compressGoodSections = document.getElementById('compressGoodSections').checked;
+  // const emphasizeBadSections = document.getElementById('emphasizeBadSections').checked;
 
   // Process all segments and group them into rows
   const rows = [];
@@ -341,14 +341,47 @@ function drawDiagram() {
     let segWidth;
     if (condition === 'bad') {
       // Bad sections get emphasized with larger scale
-      segWidth = Math.max(15, Math.round(length * (emphasizeBadSections ? 1.2 : 0.8)));
+      //segWidth = Math.max(15, Math.round(length * (emphasizeBadSections ? 1.2 : 0.8)));
+
+      if (length > 700 && length <5000) {
+    // Compress long bad sections using logarithmic scaling
+    const compressionFactor = Math.max(0.1, 200 / length);
+    segWidth = Math.max(15, Math.round(length * (0.8) * compressionFactor));
+  } 
+  
+      else if (length > 5000) {
+    // Compress long bad sections using logarithmic scaling
+    // const compressionFactor = Math.max(0.1, 200 / length);
+    // segWidth = Math.max(15, Math.round(length * (emphasizeBadSections ? 1 : 0.8) * compressionFactor));
+    segWidth = 300;
+  } 
+  
+  else {
+    // Bad sections get emphasized with larger scale
+    segWidth = Math.max(15, Math.round(length * (0.8)));
+  }
+
     } else {
       // Good sections - apply compression if > 500m
-      if (compressGoodSections && length > 500) {
+      if (length > 500 && length <5000) {
         // Compress long good sections using logarithmic scaling
-        const compressionFactor = Math.max(0.1, 500 / length);
+        const compressionFactor = Math.max(0.1, 100 / length);
         segWidth = Math.max(10, Math.round(length * 0.8 * compressionFactor));
-      } else {
+      } 
+
+      else if (length > 5000) {
+        // Compress long good sections using logarithmic scaling
+        // const compressionFactor = Math.max(0.1, 50 / length);
+        // segWidth = Math.max(10, Math.round(length * 0.8 * compressionFactor));
+        segWidth = 300;
+
+
+      } 
+      
+      
+      
+      
+      else {
         // Normal scaling for shorter good sections
         segWidth = Math.max(10, Math.round(length * 0.8));
       }
@@ -379,7 +412,7 @@ function drawDiagram() {
       hasCulvert: hasCulvert,
       technique: technique,
       coordinatesAvailable: coordinatesAvailable,
-      compressed: (condition === 'good' && length > 500 && compressGoodSections)
+      compressed: (length > 500 )
     };
     
     currentRow.push(segment);
@@ -424,7 +457,7 @@ function drawDiagram() {
   const legendX = 20;
   const legendYStart = 10;
   const legendLineLength = 50;
-  const legendGap = 20;
+  const legendGap = 15;
 
   ctx.lineWidth = 2;
   ctx.strokeStyle = "black";
@@ -451,12 +484,22 @@ function drawDiagram() {
 
   // Bold solid line - planned rehab length
   ctx.beginPath();
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 4;
   ctx.moveTo(legendX, legendYStart + 2 * legendGap);
   ctx.lineTo(legendX + legendLineLength, legendYStart + 2 * legendGap);
   ctx.stroke();
   ctx.lineWidth = 2; // reset line width
-  ctx.fillText("Planned Rehab Length", legendX + legendLineLength + 10, legendYStart + 2 * legendGap + 5);
+  ctx.fillText("Planned Rehab Length(HDD)", legendX + legendLineLength + 10, legendYStart + 2 * legendGap + 5);
+
+  ctx.beginPath();
+  ctx.setLineDash([15, 3]);
+  ctx.lineWidth = 4;
+  ctx.moveTo(legendX, legendYStart + 3 * legendGap); // Adjusted vertical position here
+  ctx.lineTo(legendX + legendLineLength, legendYStart + 3 * legendGap);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = 2; // reset line width
+  ctx.fillText("Planned Rehab Length(Trenching)", legendX + legendLineLength + 10, legendYStart + 3 * legendGap + 5);
 
 
   ctx.textAlign = "left";
@@ -570,6 +613,10 @@ function drawOFCLines(row, rowY, ofcGap, roadGap) {
         ctx.lineTo(segment.startX + segment.segWidth, ofcY);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        if (segment.compressed) {
+      drawBreakSymbol(segment.startX + segment.segWidth / 2, ofcY);
+    }
       }
     } else {
       // Good condition - solid line
@@ -635,6 +682,9 @@ function drawOFCLines(row, rowY, ofcGap, roadGap) {
 }
 
 function drawBreakSymbol(centerX, y) {
+  
+  ctx.restore();
+
   ctx.save();
     ctx.strokeStyle = "black";
     ctx.lineWidth = 2;
@@ -644,12 +694,7 @@ function drawBreakSymbol(centerX, y) {
     const slashW = 5;     // width of each slash
     const slashH = 12;    // height of each slash (slant)
 
-    // LEFT LINE
-    ctx.beginPath();
-    ctx.moveTo(centerX - (dashLen + slashGap), y);
-    ctx.lineTo(centerX - slashGap, y);
-    ctx.stroke();
-
+    
     // TWO SLANTED SLASHES "//"
     let sx = centerX; // first slash center
 
@@ -665,12 +710,12 @@ function drawBreakSymbol(centerX, y) {
     ctx.lineTo(sx + 3 + slashW + slashW, y + slashH / 2);
     ctx.stroke();
 
-    // RIGHT LINE
-    ctx.beginPath();
-    ctx.moveTo(centerX + slashGap + slashW * 3, y);
-    ctx.lineTo(centerX + slashGap + slashW * 3 + dashLen, y);
-    ctx.stroke();
-
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath();
+  ctx.moveTo(sx+2, y);
+  ctx.lineTo(sx+10, y);
+  ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over'; // Reset to default
     ctx.restore();
 }
 
