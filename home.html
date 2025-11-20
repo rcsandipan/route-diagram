@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OFC Route Diagram Creator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background-color: #f4f4f9;
+      margin: 0;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 40px;
+      color: #333;
+    }
+    .button {
+      display: inline-block;
+      width: 180px;
+      height: 60px;
+      line-height: 60px;
+      margin: 20px;
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background-color 0.3s, transform 0.2s;
+      user-select: none;
+    }
+    .button:hover {
+      background-color: #0056b3;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>OFC Route Diagram Creator</h1>
+
+  <button class="button" id="rehabBtn">Rehab</button>
+  <button class="button" id="newBtn">New</button>
+
+  <script>
+    document.getElementById('rehabBtn').addEventListener('click', () => {
+      window.location.href = 'rehab.html';
+    });
+
+    document.getElementById('newBtn').addEventListener('click', () => {
+      window.location.href = 'newlaying.html';
+    });
+  </script>
+</body>
+</html>
