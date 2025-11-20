@@ -199,6 +199,8 @@ function drawDiagram() {
   
   // Draw route name at top center
   const routeName = document.getElementById('routeName').value.trim();
+
+  
   ctx.fillStyle = "black";
   ctx.font = "bold 20px Arial";
   ctx.textAlign = "center";
@@ -260,30 +262,33 @@ function drawDiagram() {
   ctx.lineWidth = 2; // reset line width
   ctx.fillText("Planned Laying Length(Trenching)", legendX + legendLineLength + 10, legendYStart + 3 * legendGap + 5);
 
+  const seniorOfficerInput = document.getElementById('seniorOfficer').value;
+  const middleOfficerInput = document.getElementById('middleOfficer').value;
+  const officer2Input = document.getElementById('officer2').value;
+  const officer1Input = document.getElementById('officer1').value;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "black";
+  ctx.font = "12px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText(`${officer1Input}`, canvas.width -60, canvas.height-90);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "black";
   ctx.font = "12px Arial";
   ctx.textAlign = "right";
-  ctx.fillText(`SDE(Tx-Mtce)`, canvas.width -60, canvas.height-90);
-
-  ctx.textAlign = "left";
-  ctx.fillStyle = "black";
-  ctx.font = "12px Arial";
-  ctx.textAlign = "right";
-  ctx.fillText(`SDE(Tx-Plg & Inst)`, 3*canvas.width/4, canvas.height-90);
+  ctx.fillText(`${officer2Input}`, 3*canvas.width/4, canvas.height-90);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "black";
   ctx.font = "12px Arial";
   ctx.textAlign = "centre";
-  ctx.fillText(`AGM(Tx)`, canvas.width/4, canvas.height-90);
+  ctx.fillText(`${middleOfficerInput}`, canvas.width/4, canvas.height-90);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "black";
   ctx.font = "12px Arial";
   ctx.textAlign = "left";
-  ctx.fillText(`DGM(Tx)`, 100, canvas.height-90);
+  ctx.fillText(`${seniorOfficerInput}`, 100, canvas.height-90);
 
   // Draw each row
   for (let r = 0; r < rows.length; r++) {
@@ -713,6 +718,11 @@ function clearCanvas() {
   // Reset canvas to original height
   canvas.height = 900;
   hasDrawnContent = false;
+  routeName = document.getElementById('routeName').value = "";
+  seniorOfficerInput = document.getElementById('seniorOfficer').value ="";
+  middleOfficerInput = document.getElementById('middleOfficer').value ="";
+  officer2Input = document.getElementById('officer2').value ="";
+  officer1Input = document.getElementById('officer1').value ="";
 }
 
 // PDF Export Function
