@@ -47,6 +47,10 @@
   <button class="button" id="newBtn">New</button>
 
   <script>
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+    // If not logged in, redirect to login page
+    window.location.href = 'index.html';
+  }
     document.getElementById('rehabBtn').addEventListener('click', () => {
       window.location.href = 'rehab.html';
     });
