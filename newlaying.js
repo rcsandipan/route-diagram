@@ -1,4 +1,7 @@
-
+ if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+    // If not logged in, redirect to login page
+    window.location.href = 'index.html';
+  }
 
 const canvas = document.getElementById('routeCanvas');
 const ctx = canvas.getContext('2d');
@@ -211,7 +214,7 @@ function drawDiagram() {
 
   // Draw legends on left side
   const legendX = 20;
-  const legendYStart = 10;
+  const legendYStart = 30;
   const legendLineLength = 50;
   const legendGap = 15;
 
