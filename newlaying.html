@@ -130,7 +130,7 @@
        
        
         Add <b>bridge</b> or <b>culvert</b> keyword for bridge/culvert sections<br>
-        Add <b>HDD</b> or <b>Trenching</b> for laying technique
+        Add <b>HDD</b> or <b>Trenching</b> for OFC laying technique
       </p>
     </div>
 
@@ -144,9 +144,9 @@ Hospital,23.12,91.23,150,new,trenching
 0,0,60,new,HDD,bridge"></textarea><br>
     
     <div class="button-group">
-      <button onclick="drawDiagram()">Draw Route</button>
-      <button onclick="clearCanvas()">Clear</button>
-      <button onclick="exportToPDF()">Export to PDF</button>
+      <button id="drawBtn">Draw Route</button>
+      <button id="clearBtn">Clear</button>
+      <button id="exportBtn">Export to PDF</button>
     </div>
 
     <canvas id="routeCanvas" width="1300" height="900"></canvas>

@@ -3,9 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>OFC Route Diagram Creator(Rehab)</title>
-  <!-- Include jsPDF library -->
+  <title>OFC Route Diagram Creator (Rehab) — Improved</title>
+
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -36,6 +38,7 @@
       display: block;
       margin-left: auto;
       margin-right: auto;
+      max-width: 100%;
     }
     button { 
       padding: 8px 16px; 
@@ -85,37 +88,21 @@
   </style>
 </head>
 <body>
-
-  
-
   <div class="container">
-    <h2>OFC Route Diagram Creator(Rehab)</h2>
-   
-  
+    <h2>OFC Route Diagram Creator (Rehab)</h2>
+
     <label for="routeName">Enter route name: </label>
     <input type="text" id="routeName" placeholder="Route Name" style="font-size: 16px; margin-bottom: 12px; width: 300px; padding: 5px;">
     <br>
-  <label for="Officers"><b>Signatories of the survey report</b> </label>
-  <br>
-  <br>
+
+    <label for="Officers"><b>Signatories of the survey report</b> </label>
+    <br><br>
     <div style="display: flex; gap: 10px;">
-  <input type="text"
-         id="seniorOfficer"
-         placeholder="Senior Officer (e.g. GM(Tx) / DGM(Tx))" style="font-size: 12px; margin-bottom: 12px; width: 220px; padding: 5px;">
-
-  <input type="text"
-         id="middleOfficer"
-         placeholder="Middle Level Officer (e.g. DE(Tx) / AGM(Tx))" style="font-size: 12px; margin-bottom: 12px; width: 240px; padding: 5px;">
-
-  <input type="text"
-         id="officer2"
-         placeholder="Officer-2 (e.g. SDE(Tx-Plg) / JTO(Tx-Plg))" style="font-size: 12px; margin-bottom: 12px; width: 245px; padding: 5px;">
-
-  <input type="text"
-         id="officer1"
-         placeholder="Officer-1 (e.g. SDE(Tx-Mtce) / JTO(Tx-Mtce))"style="font-size: 12px; margin-bottom: 12px; width: 245px; padding: 5px;">
-</div>
-
+      <input type="text" id="seniorOfficer" placeholder="Senior Officer (e.g. GM(Tx) / DGM(Tx))" style="font-size: 12px; margin-bottom: 12px; width: 220px; padding: 5px;">
+      <input type="text" id="middleOfficer" placeholder="Middle Level Officer (e.g. DE(Tx) / AGM(Tx))" style="font-size: 12px; margin-bottom: 12px; width: 240px; padding: 5px;">
+      <input type="text" id="officer2" placeholder="Officer-2 (e.g. SDE(Tx-Plg) / JTO(Tx-Plg))" style="font-size: 12px; margin-bottom: 12px; width: 245px; padding: 5px;">
+      <input type="text" id="officer1" placeholder="Officer-1 (e.g. SDE(Tx-Mtce) / JTO(Tx-Mtce))" style="font-size: 12px; margin-bottom: 12px; width: 245px; padding: 5px;">
+    </div>
 
     <div class="instructions">
       <p>
@@ -127,17 +114,10 @@
         <code>23.7700,91.5200,150,bad,trenching</code>(without a landmark)<br>
         <code>23.7700,91.5600,50,bad,hdd</code>(without a bridge or culvert)<br>
         <code>23.7700,91.5700,1000,good</code><br>
-        <code>0,0,60,bad,HDD,bridge</code> (use 0,0 when coordinates are not available)<br>
-        <br>
-       
-       
-        Condition = <b>good</b> (OFC with good condition) or <b>bad</b> (OFC with bad condition)<br>
-        Add <b>bridge</b> or <b>culvert</b> keyword for bridge/culvert sections<br>
-        Add <b>HDD</b> or <b>Trenching</b> for laying technique in bad sections
+        <code>0,0,60,bad,HDD,bridge</code> (use 0,0 when coordinates are not available)<br><br>
+        Condition = <b>good</b> or <b>bad</b>. Add <b>bridge</b> / <b>culvert</b> for those sections. Add <b>HDD</b> or <b>Trenching</b> for OFC laying techniques.
       </p>
     </div>
-
- 
 
     <textarea id="inputData" placeholder="Example:
 Northgate TE,23.8396,91.282,200,bad,hdd,bridge
@@ -145,18 +125,16 @@ Hospital,23.12,91.23,150,good
 23.7700,91.5200,150,bad,trenching
 23.7700,91.5600,50,bad,hdd
 0,0,60,bad,HDD,bridge"></textarea><br>
-    
+
     <div class="button-group">
-      <button onclick="drawDiagram()">Draw Route</button>
-      <button onclick="clearCanvas()">Clear</button>
-      <button onclick="exportToPDF()">Export to PDF</button>
+      <button id="drawBtn">Draw Route</button>
+      <button id="clearBtn">Clear</button>
+      <button id="exportBtn">Export to PDF</button>
     </div>
 
     <canvas id="routeCanvas" width="1300" height="900"></canvas>
   </div>
-<script src="rehab.js"></script>
 
+  <script src="rehab.js"></script>
 </body>
 </html>
-
-
