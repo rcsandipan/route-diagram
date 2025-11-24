@@ -14,6 +14,7 @@ const validCredentials = {
     if (validPassword && validPassword === passwordInput) {
       // Redirect to home.html
       sessionStorage.setItem('isLoggedIn', 'true');
+      sessionStorage.setItem('username', username);
       window.location.href = 'home.html';
     } else {
       document.getElementById('errorMsg').innerText = 'Invalid credentials. Please try again.';

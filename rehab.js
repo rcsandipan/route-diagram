@@ -3,6 +3,7 @@
 if (sessionStorage.getItem('isLoggedIn') !== 'true') {
   window.location.href = 'index.html';
 }
+const username = sessionStorage.getItem('username');
 
 const canvas = document.getElementById('routeCanvas');
 const ctx = canvas.getContext('2d');
@@ -10,6 +11,8 @@ const ctx = canvas.getContext('2d');
 const drawBtn = document.getElementById('drawBtn');
 const clearBtn = document.getElementById('clearBtn');
 const exportBtn = document.getElementById('exportBtn');
+const downloadImageBtn = document.getElementById('downloadImageBtn');
+const homeBtn = document.getElementById('homeBtn');
 
 
 
@@ -45,6 +48,10 @@ clearBtn.onclick = () => {
 exportBtn.onclick = () => {
   exportToPDF();
 };
+homeBtn.onclick = () => {
+  window.location.href = 'home.html';
+};
+
 
 // ---------- Main diagram flow ----------
 function drawDiagram() {
@@ -206,11 +213,14 @@ function createHeaderCanvas(rows) {
 
   // total bad length
   let totalBadLength = 0;
+  let rkm = 0;
   for (const row of rows) {
     for (const seg of row) if (seg.condition === 'bad') totalBadLength += seg.length;
+    for (const seg of row) rkm +=seg.length;
   }
   hctx.font = '16px Arial';
-  hctx.fillText(`Total Rehab length - ${totalBadLength} Metre`, hc.width / 2, 55);
+  hctx.fillText(`Total Route Length - ${rkm/1000} KM`, hc.width / 2, 55);
+  hctx.fillText(`Total Rehab Length - ${totalBadLength/1000} KM`, hc.width / 2, 75);
 
   // legends on left
   const legendX = 20;
@@ -698,6 +708,31 @@ function clearCanvas() {
   headerCanvas = null;
 }
 
+// Download Image 
+downloadImageBtn.onclick = () => {
+  if (!hasDrawnContent) {
+    alert('Please draw a diagram before downloading the image.');
+    return;
+  }
+  
+  // Convert canvas to data URL (PNG)
+  const imageData = canvas.toDataURL('image/png');
+
+  // Create a temporary anchor element for download
+  const link = document.createElement('a');
+  link.href = imageData;
+
+  // Use route name or default for filename
+  const routeName = document.getElementById('routeName').value.trim() || 'OFC';
+  link.download = `${routeName}_Rehab_RouteDiagram.png`;
+
+  // Trigger download
+  link.click();
+
+  // Clean up
+  link.remove();
+};
+
 // ---------- PDF export (multi-page) ----------
 async function exportToPDF() {
   if (!hasDrawnContent) {
@@ -707,101 +742,321 @@ async function exportToPDF() {
 
   const { jsPDF } = window.jspdf;
 
-  // A4 landscape
+  // A4 Landscape PDF
   const pdf = new jsPDF({
-    orientation: 'landscape',
-    unit: 'mm',
-    format: 'a4'
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+    compress: true
   });
 
   const pageWidthMM = pdf.internal.pageSize.getWidth();
   const pageHeightMM = pdf.internal.pageSize.getHeight();
   const marginMM = 10;
+
   const usableW = pageWidthMM - 2 * marginMM;
   const usableH = pageHeightMM - 2 * marginMM;
 
   let yPosMM = marginMM;
 
-  // Helper to draw an image canvas onto PDF with scaled dimensions
-  const addCanvasToPdfAt = (canvasEl, xMM, yMM, maxWmm, maxHmm) => {
-    const imgData = canvasEl.toDataURL('image/png');
+  const PX_TO_MM = 0.264583; // 96 DPI → mm
 
-    // compute scale to fit width
-    const widthPx = canvasEl.width;
-    const heightPx = canvasEl.height;
-    const pxToMm = PX_TO_MM;
+  // ------------------------------------------------------------------
+  // 1️⃣  Utility: Convert canvas to high-quality, compressed JPEG
+  // ------------------------------------------------------------------
+  function canvasToHighQualityJPEG(canvas, maxDPI = 200, quality = 0.92) {
+    const inchPerMm = 1 / 25.4;
+    const pdfWidthInch = usableW * inchPerMm;
+    const targetPxWidth = Math.floor(pdfWidthInch * maxDPI);
 
-    // scale so that width becomes <= maxWmm
-    const desiredWmm = Math.min(maxWmm, widthPx * pxToMm);
-    const scale = desiredWmm / (widthPx * pxToMm);
-    const drawW = desiredWmm;
-    const drawH = heightPx * pxToMm * scale;
+    const scale = targetPxWidth / canvas.width;
 
-    // add image
-    pdf.addImage(imgData, 'PNG', xMM, yMM, drawW, drawH);
+    const off = document.createElement("canvas");
+    off.width = canvas.width * scale;
+    off.height = canvas.height * scale;
 
-    return drawH; // height used in mm
-  };
+    const ctx = off.getContext("2d");
+    ctx.drawImage(canvas, 0, 0, off.width, off.height);
 
-  // First, put header on first page (if present)
-  if (headerCanvas) {
-    // If header too tall for first page (rare), scale to fit usableH
-    const headerHeightMM = headerCanvas.height * PX_TO_MM;
-    const headerWidthMM = headerCanvas.width * PX_TO_MM;
-    const headerScale = Math.min(1, usableW / headerWidthMM, usableH / headerHeightMM);
-    const dispHeaderW = headerCanvas.width * PX_TO_MM * headerScale;
-    const dispHeaderH = headerCanvas.height * PX_TO_MM * headerScale;
-
-    pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', marginMM, yPosMM, dispHeaderW, dispHeaderH);
-    yPosMM += dispHeaderH + 4;
+    return off.toDataURL("image/jpeg", quality);
   }
 
-  // iterate rows; place as many rows on a page as fit; every row will be placed whole
+  // ------------------------------------------------------------------
+  // 2️⃣  Add canvas to PDF at given location (auto-scaled)
+  // ------------------------------------------------------------------
+  const addCanvasToPdfAt = (canvasEl, xMM, yMM, maxWmm, maxHmm) => {
+    const imgData = canvasToHighQualityJPEG(canvasEl, 200, 0.92); // High Quality JPEG
+
+    const widthPx = canvasEl.width;
+    const heightPx = canvasEl.height;
+
+    const unscaledWmm = widthPx * PX_TO_MM;
+
+    const scale = Math.min(1, maxWmm / unscaledWmm);
+    const drawW = unscaledWmm * scale;
+    const drawH = heightPx * PX_TO_MM * scale;
+
+    pdf.addImage(imgData, "JPEG", xMM, yMM, drawW, drawH);
+
+    if (username === "guest") {
+      addWatermark(pdf, "FREE SAMPLE");
+    }
+
+    return drawH;
+  };
+
+  // ------------------------------------------------------------------
+  // 3️⃣  Watermark (only for guest)
+  // ------------------------------------------------------------------
+  function addWatermark(pdf, text) {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const pxPerMm = 96 / 25.4;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = pageWidth * pxPerMm;
+    canvas.height = pageHeight * pxPerMm;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.font = "bold 120px Arial";
+    ctx.fillStyle = "rgba(180, 180, 180, 0.24)";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(45 * Math.PI / 180);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+
+    pdf.addImage(
+      canvas.toDataURL("image/png"),
+      "PNG",
+      0,
+      0,
+      pageWidth,
+      pageHeight
+    );
+  }
+
+  // ------------------------------------------------------------------
+  // 4️⃣  Add header (first page only)
+  // ------------------------------------------------------------------
+  if (headerCanvas) {
+    const headerW = headerCanvas.width * PX_TO_MM;
+    const headerH = headerCanvas.height * PX_TO_MM;
+
+    const scale = Math.min(1, usableW / headerW, usableH / headerH);
+
+    const dispW = headerW * scale;
+    const dispH = headerH * scale;
+
+    pdf.addImage(
+      canvasToHighQualityJPEG(headerCanvas),
+      "JPEG",
+      marginMM,
+      yPosMM,
+      dispW,
+      dispH
+    );
+
+    yPosMM += dispH + 4;
+  }
+
+  // ------------------------------------------------------------------
+  // 5️⃣  Add all row canvases (auto page-break)
+  // ------------------------------------------------------------------
   for (let i = 0; i < rowCanvases.length; i++) {
     const rc = rowCanvases[i];
-    // compute target height in mm if width scaled to usableW
-    const rcWidthMM = rc.width * PX_TO_MM;
-    const scale = Math.min(1, usableW / rcWidthMM);
-    const rcHeightMM = rc.height * PX_TO_MM * scale;
 
-    // if doesn't fit remaining vertical space, start new page
-    if (yPosMM + rcHeightMM > pageHeightMM - marginMM) {
+    const rcW = rc.width * PX_TO_MM;
+    const scale = Math.min(1, usableW / rcW);
+    const rcH = rc.height * PX_TO_MM * scale;
+
+    // Page break if needed
+    if (yPosMM + rcH > pageHeightMM - marginMM) {
       pdf.addPage();
       yPosMM = marginMM;
     }
 
     addCanvasToPdfAt(rc, marginMM, yPosMM, usableW, usableH);
-    yPosMM += rcHeightMM + 4; // small gutter
+    yPosMM += rcH + 4;
   }
 
- // -----------------------------------------
-// SIGNATORIES ON LAST PAGE
-// -----------------------------------------
-pdf.setFont("Arial", "normal");
-pdf.setFontSize(12);
+  // ------------------------------------------------------------------
+  // 6️⃣  SIGNATORIES (always on last page)
+  // ------------------------------------------------------------------
+  pdf.setFont("Arial", "normal");
+  pdf.setFontSize(12);
 
-const signY = pdf.internal.pageSize.getHeight() - 40; // 40px from bottom
-const centerX = pdf.internal.pageSize.getWidth() / 2;
+  const signY = pageHeightMM - 10;
+  const centerX = pageWidthMM / 2;
 
-// Read officer names LIVE
-const seniorOfficer = document.getElementById('seniorOfficer').value.trim();
-const middleOfficer = document.getElementById('middleOfficer').value.trim();
-const officer2 = document.getElementById('officer2').value.trim();
-const officer1 = document.getElementById('officer1').value.trim();
+  const seniorOfficer = document.getElementById("seniorOfficer").value.trim();
+  const middleOfficer = document.getElementById("middleOfficer").value.trim();
+  const officer2 = document.getElementById("officer2").value.trim();
+  const officer1 = document.getElementById("officer1").value.trim();
 
-// Layout positions
-//pdf.text("____________________", 60, signY - 12);
-if (seniorOfficer) pdf.text(seniorOfficer, 30, signY);
+  if (seniorOfficer) pdf.text(seniorOfficer, 30, signY);
+  if (middleOfficer) pdf.text(middleOfficer, centerX - 40, signY);
+  if (officer2) pdf.text(officer2, centerX + 40, signY);
+  if (officer1) pdf.text(officer1, pageWidthMM - 60, signY);
 
-//pdf.text("____________________", centerX - 80, signY - 12);
-if (middleOfficer) pdf.text(middleOfficer, centerX - 40, signY);
-
-//pdf.text("____________________", centerX + 80, signY - 12);
-if (officer2) pdf.text(officer2, centerX + 40, signY);
-
-//pdf.text("____________________", pdf.internal.pageSize.getWidth() - 160, signY - 12);
-if (officer1) pdf.text(officer1, pdf.internal.pageSize.getWidth() - 60, signY);
-
-  const routeName = document.getElementById('routeName').value.trim() || 'OFC_Route_Diagram';
+  // ------------------------------------------------------------------
+  // 7️⃣  SAVE PDF
+  // ------------------------------------------------------------------
+  const routeName = document.getElementById("routeName").value.trim() || "OFC";
   pdf.save(`${routeName}_Rehab_RouteDiagram.pdf`);
 }
+
+// async function exportToPDF() {
+//   if (!hasDrawnContent) {
+//     alert('Please draw a diagram first before exporting to PDF.');
+//     return;
+//   }
+
+//   const { jsPDF } = window.jspdf;
+
+//   // A4 landscape
+//   const pdf = new jsPDF({
+//     orientation: 'landscape',
+//     unit: 'mm',
+//     format: 'a4'
+//   });
+
+//   const pageWidthMM = pdf.internal.pageSize.getWidth();
+//   const pageHeightMM = pdf.internal.pageSize.getHeight();
+//   const marginMM = 10;
+//   const usableW = pageWidthMM - 2 * marginMM;
+//   const usableH = pageHeightMM - 2 * marginMM;
+
+//   let yPosMM = marginMM;
+
+//   // Helper to draw an image canvas onto PDF with scaled dimensions
+//   const addCanvasToPdfAt = (canvasEl, xMM, yMM, maxWmm, maxHmm) => {
+//     const imgData = canvasEl.toDataURL('image/png');
+
+//     // compute scale to fit width
+//     const widthPx = canvasEl.width;
+//     const heightPx = canvasEl.height;
+//     const pxToMm = PX_TO_MM;
+
+//     // scale so that width becomes <= maxWmm
+//     const desiredWmm = Math.min(maxWmm, widthPx * pxToMm);
+//     const scale = desiredWmm / (widthPx * pxToMm);
+//     const drawW = desiredWmm;
+//     const drawH = heightPx * pxToMm * scale;
+
+//     // add image
+//     pdf.addImage(imgData, 'PNG', xMM, yMM, drawW, drawH);
+
+//     if (username ==="guest") {
+//         addWatermark(pdf, "FREE SAMPLE");
+//     }
+
+//   function addWatermark(pdf, text) {
+//     const pageWidth = pdf.internal.pageSize.getWidth();
+//     const pageHeight = pdf.internal.pageSize.getHeight();
+
+//     // Create transparent canvas same size as PDF page
+//     const canvas = document.createElement("canvas");
+//     const pxPerMm = 96 / 25.4;
+//     canvas.width = pageWidth * pxPerMm;
+//     canvas.height = pageHeight * pxPerMm;
+
+//     const ctx = canvas.getContext("2d");
+//     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+//     // Watermark style
+//     ctx.font = "bold 120px Arial";
+//     ctx.fillStyle = "rgba(180,180,180,0.25)";
+//     ctx.textAlign = "center";
+//     ctx.textBaseline = "middle";
+
+//     // Center + rotate text
+//     ctx.save();
+//     ctx.translate(canvas.width / 2, canvas.height / 2);
+//     ctx.rotate(45 * Math.PI / 180);
+//     ctx.fillText(text, 0, 0);
+//     ctx.restore();
+
+//     // Convert to PNG and add to PDF
+//     const imgData = canvas.toDataURL("image/png");
+
+//     pdf.addImage(
+//         imgData,
+//         "PNG",
+//         0,
+//         0,
+//         pageWidth,
+//         pageHeight
+//     );
+// }
+
+//     return drawH; // height used in mm
+//   };
+
+//   // First, put header on first page (if present)
+//   if (headerCanvas) {
+//     // If header too tall for first page (rare), scale to fit usableH
+//     const headerHeightMM = headerCanvas.height * PX_TO_MM;
+//     const headerWidthMM = headerCanvas.width * PX_TO_MM;
+//     const headerScale = Math.min(1, usableW / headerWidthMM, usableH / headerHeightMM);
+//     const dispHeaderW = headerCanvas.width * PX_TO_MM * headerScale;
+//     const dispHeaderH = headerCanvas.height * PX_TO_MM * headerScale;
+
+//     pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', marginMM, yPosMM, dispHeaderW, dispHeaderH);
+//     yPosMM += dispHeaderH + 4;
+//   }
+
+//   // iterate rows; place as many rows on a page as fit; every row will be placed whole
+//   for (let i = 0; i < rowCanvases.length; i++) {
+//     const rc = rowCanvases[i];
+//     // compute target height in mm if width scaled to usableW
+//     const rcWidthMM = rc.width * PX_TO_MM;
+//     const scale = Math.min(1, usableW / rcWidthMM);
+//     const rcHeightMM = rc.height * PX_TO_MM * scale;
+
+//     // if doesn't fit remaining vertical space, start new page
+//     if (yPosMM + rcHeightMM > pageHeightMM - marginMM) {
+//       pdf.addPage();
+//       yPosMM = marginMM;
+//     }
+
+//     addCanvasToPdfAt(rc, marginMM, yPosMM, usableW, usableH);
+//     yPosMM += rcHeightMM + 4; // small gutter
+//   }
+
+//  // -----------------------------------------
+// // SIGNATORIES ON LAST PAGE
+// // -----------------------------------------
+// pdf.setFont("Arial", "normal");
+// pdf.setFontSize(12);
+
+// const signY = pdf.internal.pageSize.getHeight() - 40; // 40px from bottom
+// const centerX = pdf.internal.pageSize.getWidth() / 2;
+
+// // Read officer names LIVE
+// const seniorOfficer = document.getElementById('seniorOfficer').value.trim();
+// const middleOfficer = document.getElementById('middleOfficer').value.trim();
+// const officer2 = document.getElementById('officer2').value.trim();
+// const officer1 = document.getElementById('officer1').value.trim();
+
+// // Layout positions
+// //pdf.text("____________________", 60, signY - 12);
+// if (seniorOfficer) pdf.text(seniorOfficer, 30, signY);
+
+// //pdf.text("____________________", centerX - 80, signY - 12);
+// if (middleOfficer) pdf.text(middleOfficer, centerX - 40, signY);
+
+// //pdf.text("____________________", centerX + 80, signY - 12);
+// if (officer2) pdf.text(officer2, centerX + 40, signY);
+
+// //pdf.text("____________________", pdf.internal.pageSize.getWidth() - 160, signY - 12);
+// if (officer1) pdf.text(officer1, pdf.internal.pageSize.getWidth() - 60, signY);
+
+//   const routeName = document.getElementById('routeName').value.trim() || 'OFC';
+//   pdf.save(`${routeName}_Rehab_RouteDiagram.pdf`);
+// }

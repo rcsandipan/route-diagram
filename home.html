@@ -12,6 +12,23 @@
       background-color: #f4f4f9;
       margin: 0;
     }
+
+     #logoutBtn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #logoutBtn:hover {
+      background-color: #b52a37;
+    }
     h1 {
       font-size: 2.5em;
       margin-bottom: 40px;
@@ -41,23 +58,14 @@
   </style>
 </head>
 <body>
+  <button id="logoutBtn">Logout</button>
   <h1>OFC Route Diagram Creator</h1>
 
   <button class="button" id="rehabBtn">Rehab</button>
   <button class="button" id="newBtn">New</button>
 
-  <script>
-    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-    // If not logged in, redirect to login page
-    window.location.href = 'index.html';
-  }
-    document.getElementById('rehabBtn').addEventListener('click', () => {
-      window.location.href = 'rehab.html';
-    });
-
-    document.getElementById('newBtn').addEventListener('click', () => {
-      window.location.href = 'newlaying.html';
-    });
+  <script src="home.js">
+   
   </script>
 </body>
 </html>

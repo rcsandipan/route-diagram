@@ -14,6 +14,22 @@
       margin: 20px; 
       background-color: #f5f5f5;
     }
+    #homeBtn {
+      position: absolute;
+      top: 25px;
+      right: 30px;
+      background-color: #07a328;
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    #homeBtn:hover {
+      background-color: #2eeb08;
+    }
     .container {
       max-width: 1600px;
       margin: 0 auto;
@@ -59,9 +75,9 @@
     }
     .instructions {
       background-color: #f9f9f9;
-      padding: 15px;
+      padding: 5px;
       border-radius: 4px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     code {
       background-color: #eee;
@@ -89,6 +105,7 @@
 </head>
 <body>
   <div class="container">
+     <button id="homeBtn">HOME</button>
     <h2>OFC Route Diagram Creator (Rehab)</h2>
 
     <label for="routeName">Enter route name: </label>
@@ -115,7 +132,8 @@
         <code>23.7700,91.5600,50,bad,hdd</code>(without a bridge or culvert)<br>
         <code>23.7700,91.5700,1000,good</code><br>
         <code>0,0,60,bad,HDD,bridge</code> (use 0,0 when coordinates are not available)<br><br>
-        Condition = <b>good</b> or <b>bad</b>. Add <b>bridge</b> / <b>culvert</b> for those sections. Add <b>HDD</b> or <b>Trenching</b> for OFC laying techniques.
+        Condition = <b>good</b> or <b>bad</b>. Add <b>bridge</b> / <b>culvert</b> for those sections. <br>
+        Add <b>HDD</b> or <b>Trenching</b> for OFC laying techniques.
       </p>
     </div>
 
@@ -129,6 +147,7 @@ Hospital,23.12,91.23,150,good
     <div class="button-group">
       <button id="drawBtn">Draw Route</button>
       <button id="clearBtn">Clear</button>
+      <button id="downloadImageBtn">Download as Image</button>
       <button id="exportBtn">Export to PDF</button>
     </div>
 
