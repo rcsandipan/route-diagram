@@ -24,7 +24,7 @@ const CANVAS_WIDTH = 1300;
 canvas.width = CANVAS_WIDTH;
 
 const MARGIN_X = 60;
-const ROW_HEIGHT = 300;        // per-row canvas height (you may adjust)
+const ROW_HEIGHT = 400;        // per-row canvas height (you may adjust)
 const TOP_MARGIN = 150;       // header area (title + legend)
 const ROAD_GAP = 50;
 const OFC_GAP = 10;
@@ -133,7 +133,7 @@ function buildRowsFromLines(lines) {
     }
 
     // compute segWidth (scaling rules similar to your original)
-    let segWidth = computeSegmentWidth(length, condition);
+    let segWidth = computeSegmentWidth(length, condition, hasBridge, hasCulvert);
 
     cumulativeLength += length;
 
@@ -158,7 +158,7 @@ function buildRowsFromLines(lines) {
       hasCulvert,
       technique,
       coordinatesAvailable,
-      compressed: (length > 500)
+      compressed: (length > 200) // Updated compression threshold
     };
 
     currentRow.push(segment);
@@ -169,25 +169,27 @@ function buildRowsFromLines(lines) {
   return rows;
 }
 
-function computeSegmentWidth(length, condition) {
+function computeSegmentWidth(length, condition, hasBridge = false, hasCulvert = false) {
+  // MODIFICATION 2: For bridge and culvert of length less than 50m, use 50 units for clarity
+  if ((hasBridge || hasCulvert) && length < 50) {
+    return 40;
+  }
+  if (length < 30) {
+    return 30;
+  }
+
+  
+  // MODIFICATION 1: For segments longer than 200m, compress pro-rata with max 500 units
+  if (length > 200) {
+    const compressionFactor = 300 / length;
+    return Math.max(15, Math.min(200, Math.round(length * compressionFactor)));
+  }
+  
+  // Original logic for shorter segments
   if (condition === 'bad') {
-    if (length > 700 && length < 5000) {
-      const compressionFactor = Math.max(0.1, 200 / length);
-      return Math.max(15, Math.round(length * 0.8 * compressionFactor));
-    } else if (length >= 5000) {
-      return 300;
-    } else {
-      return Math.max(15, Math.round(length * 0.8));
-    }
+    return Math.max(15, Math.round(length * 0.8));
   } else {
-    if (length > 500 && length < 5000) {
-      const compressionFactor = Math.max(0.1, 100 / length);
-      return Math.max(10, Math.round(length * 0.8 * compressionFactor));
-    } else if (length >= 5000) {
-      return 300;
-    } else {
-      return Math.max(10, Math.round(length * 0.8));
-    }
+    return Math.max(10, Math.round(length * 0.8));
   }
 }
 
@@ -413,7 +415,7 @@ function drawParallelLabelOnCtx(rctx, segment, labelY) {
     const font1 = "bold 11px Arial";
     const font2 = "10px Arial";
     const lineGap = 14;     // GAP between landmark and coordinates (THIS FIXES OVERLAP)
-    const maxWidth = 300;   // truncate if needed
+    const maxWidth = 500;   // truncate if needed
 
     // Helper: truncate long text
     function fitText(text, font) {
@@ -528,7 +530,7 @@ function drawBridgeOnCtx(rctx, startX, y, width, length) {
   rctx.fillStyle = 'black';
   rctx.font = 'bold 11px Arial';
   rctx.textAlign = 'center';
-  rctx.translate(centerX, y - bridgeHeight - 25);
+  rctx.translate(centerX+4, y - bridgeHeight - 25);
   rctx.rotate(-Math.PI / 2);
   rctx.fillText(`Bridge ${length}m`, 0, 0);
   rctx.restore();
@@ -572,7 +574,7 @@ function drawCulvertOnCtx(rctx, startX, y, width, length) {
   rctx.textAlign = 'center';
   rctx.translate(centerX, y - culvertHeight - 35);
   rctx.rotate(-Math.PI / 2);
-  rctx.fillText(`Culvert ${length}m`, 0, 0);
+  rctx.fillText(`Culvert  ${length}m`, 0, 0);
   rctx.restore();
 }
 
@@ -625,7 +627,7 @@ function drawCumulativeLengthsOnCtx(rctx, row, rowY, ofcGap, roadGap,rowIndex) {
 
     // Draw rotated "0 M" label at the same relative position as other cumulative labels
     rctx.save();
-    rctx.translate(startX, ofcY + 35);
+    rctx.translate(startX+4, ofcY + 35);
     rctx.rotate(-Math.PI / 2);
     rctx.fillText(`0 M`, 0, 0);
     rctx.restore();
@@ -634,7 +636,7 @@ function drawCumulativeLengthsOnCtx(rctx, row, rowY, ofcGap, roadGap,rowIndex) {
   for (const seg of row) {
     const endX = seg.startX + seg.segWidth;
     rctx.save();
-    rctx.translate(endX, ofcY + 35);
+    rctx.translate(endX+4, ofcY + 35);
     rctx.rotate(-Math.PI / 2);
     if (seg.length) rctx.fillText(`${seg.cumulativeLength} M`, 0, 0);
     rctx.restore();
@@ -910,153 +912,3 @@ async function exportToPDF() {
   const routeName = document.getElementById("routeName").value.trim() || "OFC";
   pdf.save(`${routeName}_Rehab_RouteDiagram.pdf`);
 }
-
-// async function exportToPDF() {
-//   if (!hasDrawnContent) {
-//     alert('Please draw a diagram first before exporting to PDF.');
-//     return;
-//   }
-
-//   const { jsPDF } = window.jspdf;
-
-//   // A4 landscape
-//   const pdf = new jsPDF({
-//     orientation: 'landscape',
-//     unit: 'mm',
-//     format: 'a4'
-//   });
-
-//   const pageWidthMM = pdf.internal.pageSize.getWidth();
-//   const pageHeightMM = pdf.internal.pageSize.getHeight();
-//   const marginMM = 10;
-//   const usableW = pageWidthMM - 2 * marginMM;
-//   const usableH = pageHeightMM - 2 * marginMM;
-
-//   let yPosMM = marginMM;
-
-//   // Helper to draw an image canvas onto PDF with scaled dimensions
-//   const addCanvasToPdfAt = (canvasEl, xMM, yMM, maxWmm, maxHmm) => {
-//     const imgData = canvasEl.toDataURL('image/png');
-
-//     // compute scale to fit width
-//     const widthPx = canvasEl.width;
-//     const heightPx = canvasEl.height;
-//     const pxToMm = PX_TO_MM;
-
-//     // scale so that width becomes <= maxWmm
-//     const desiredWmm = Math.min(maxWmm, widthPx * pxToMm);
-//     const scale = desiredWmm / (widthPx * pxToMm);
-//     const drawW = desiredWmm;
-//     const drawH = heightPx * pxToMm * scale;
-
-//     // add image
-//     pdf.addImage(imgData, 'PNG', xMM, yMM, drawW, drawH);
-
-//     if (username ==="guest") {
-//         addWatermark(pdf, "FREE SAMPLE");
-//     }
-
-//   function addWatermark(pdf, text) {
-//     const pageWidth = pdf.internal.pageSize.getWidth();
-//     const pageHeight = pdf.internal.pageSize.getHeight();
-
-//     // Create transparent canvas same size as PDF page
-//     const canvas = document.createElement("canvas");
-//     const pxPerMm = 96 / 25.4;
-//     canvas.width = pageWidth * pxPerMm;
-//     canvas.height = pageHeight * pxPerMm;
-
-//     const ctx = canvas.getContext("2d");
-//     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-//     // Watermark style
-//     ctx.font = "bold 120px Arial";
-//     ctx.fillStyle = "rgba(180,180,180,0.25)";
-//     ctx.textAlign = "center";
-//     ctx.textBaseline = "middle";
-
-//     // Center + rotate text
-//     ctx.save();
-//     ctx.translate(canvas.width / 2, canvas.height / 2);
-//     ctx.rotate(45 * Math.PI / 180);
-//     ctx.fillText(text, 0, 0);
-//     ctx.restore();
-
-//     // Convert to PNG and add to PDF
-//     const imgData = canvas.toDataURL("image/png");
-
-//     pdf.addImage(
-//         imgData,
-//         "PNG",
-//         0,
-//         0,
-//         pageWidth,
-//         pageHeight
-//     );
-// }
-
-//     return drawH; // height used in mm
-//   };
-
-//   // First, put header on first page (if present)
-//   if (headerCanvas) {
-//     // If header too tall for first page (rare), scale to fit usableH
-//     const headerHeightMM = headerCanvas.height * PX_TO_MM;
-//     const headerWidthMM = headerCanvas.width * PX_TO_MM;
-//     const headerScale = Math.min(1, usableW / headerWidthMM, usableH / headerHeightMM);
-//     const dispHeaderW = headerCanvas.width * PX_TO_MM * headerScale;
-//     const dispHeaderH = headerCanvas.height * PX_TO_MM * headerScale;
-
-//     pdf.addImage(headerCanvas.toDataURL('image/png'), 'PNG', marginMM, yPosMM, dispHeaderW, dispHeaderH);
-//     yPosMM += dispHeaderH + 4;
-//   }
-
-//   // iterate rows; place as many rows on a page as fit; every row will be placed whole
-//   for (let i = 0; i < rowCanvases.length; i++) {
-//     const rc = rowCanvases[i];
-//     // compute target height in mm if width scaled to usableW
-//     const rcWidthMM = rc.width * PX_TO_MM;
-//     const scale = Math.min(1, usableW / rcWidthMM);
-//     const rcHeightMM = rc.height * PX_TO_MM * scale;
-
-//     // if doesn't fit remaining vertical space, start new page
-//     if (yPosMM + rcHeightMM > pageHeightMM - marginMM) {
-//       pdf.addPage();
-//       yPosMM = marginMM;
-//     }
-
-//     addCanvasToPdfAt(rc, marginMM, yPosMM, usableW, usableH);
-//     yPosMM += rcHeightMM + 4; // small gutter
-//   }
-
-//  // -----------------------------------------
-// // SIGNATORIES ON LAST PAGE
-// // -----------------------------------------
-// pdf.setFont("Arial", "normal");
-// pdf.setFontSize(12);
-
-// const signY = pdf.internal.pageSize.getHeight() - 40; // 40px from bottom
-// const centerX = pdf.internal.pageSize.getWidth() / 2;
-
-// // Read officer names LIVE
-// const seniorOfficer = document.getElementById('seniorOfficer').value.trim();
-// const middleOfficer = document.getElementById('middleOfficer').value.trim();
-// const officer2 = document.getElementById('officer2').value.trim();
-// const officer1 = document.getElementById('officer1').value.trim();
-
-// // Layout positions
-// //pdf.text("____________________", 60, signY - 12);
-// if (seniorOfficer) pdf.text(seniorOfficer, 30, signY);
-
-// //pdf.text("____________________", centerX - 80, signY - 12);
-// if (middleOfficer) pdf.text(middleOfficer, centerX - 40, signY);
-
-// //pdf.text("____________________", centerX + 80, signY - 12);
-// if (officer2) pdf.text(officer2, centerX + 40, signY);
-
-// //pdf.text("____________________", pdf.internal.pageSize.getWidth() - 160, signY - 12);
-// if (officer1) pdf.text(officer1, pdf.internal.pageSize.getWidth() - 60, signY);
-
-//   const routeName = document.getElementById('routeName').value.trim() || 'OFC';
-//   pdf.save(`${routeName}_Rehab_RouteDiagram.pdf`);
-// }
