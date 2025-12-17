@@ -368,7 +368,7 @@ function drawOFCLinesOnCtx(rctx, row, rowY, ofcGap, roadGap) {
         rctx.lineTo(segment.startX + segment.segWidth, ofcY);
         rctx.stroke();
         rctx.setLineDash([]);
-        if (segment.compressed) drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
+        //if (segment.compressed) drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
       }
     } else {
       rctx.setLineDash([]);
@@ -376,9 +376,9 @@ function drawOFCLinesOnCtx(rctx, row, rowY, ofcGap, roadGap) {
       rctx.moveTo(segment.startX, ofcY);
       rctx.lineTo(segment.startX + segment.segWidth, ofcY);
       rctx.stroke();
-      if (segment.compressed) {
-        drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
-      }
+      // if (segment.compressed) {
+      //   drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
+      // }
     }
 
     // Draw landmark and coordinates parallel to each other with gap:
@@ -484,9 +484,9 @@ function drawBreakSymbolOnCtx(rctx, centerX, y) {
   // small erasure (destination-out) to indicate a gap in the OFC line
   rctx.globalCompositeOperation = 'destination-out';
   rctx.beginPath();
-  rctx.moveTo(centerX - 1, y - 2);
+  rctx.moveTo(centerX - 3, y - 2);
   rctx.lineTo(centerX + 7, y + 2);
-  rctx.lineWidth = 3;
+  rctx.lineWidth = 4;
   rctx.stroke();
   rctx.globalCompositeOperation = 'source-over';
   rctx.restore();

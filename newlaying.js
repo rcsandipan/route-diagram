@@ -1,4 +1,4 @@
-// rehab.js - rewritten to use per-row offscreen canvases and multi-page PDF export
+// newlaying.js - rewritten to use per-row offscreen canvases and multi-page PDF export
 
 if (sessionStorage.getItem('isLoggedIn') !== 'true') {
   window.location.href = 'index.html';
@@ -66,7 +66,7 @@ function drawDiagram() {
   // Parse segments and group rows (same parsing logic as original)
   const rows = buildRowsFromLines(lines);
 
-  // Create header canvas (title + legend + signatories + total rehab length)
+  // Create header canvas (title + legend + signatories + total new laying length)
   headerCanvas = createHeaderCanvas(rows);
 
   // Create per-row offscreen canvases
@@ -211,7 +211,7 @@ function createHeaderCanvas(rows) {
   hctx.fillStyle = 'black';
   hctx.font = 'bold 20px Arial';
   hctx.textAlign = 'center';
-  hctx.fillText(`Survey for OFC Rehab: ${routeName}`, hc.width / 2, 30);
+  hctx.fillText(`Survey for OFC New Laying: ${routeName}`, hc.width / 2, 30);
 
   // total new length
   let totalNewLength = 0;
@@ -222,7 +222,7 @@ function createHeaderCanvas(rows) {
   }
   hctx.font = '16px Arial';
   hctx.fillText(`Total Route Length - ${rkm/1000} KM`, hc.width / 2, 55);
-  hctx.fillText(`Total Rehab Length - ${totalNewLength/1000} KM`, hc.width / 2, 75);
+  hctx.fillText(`Total New Laying Length - ${totalNewLength/1000} KM`, hc.width / 2, 75);
 
   // legends on left
   const legendX = 20;
@@ -234,21 +234,21 @@ function createHeaderCanvas(rows) {
   hctx.strokeStyle = 'black';
 
   // solid
-  hctx.beginPath(); hctx.setLineDash([]); hctx.moveTo(legendX, legendYStart); hctx.lineTo(legendX + legendLineLength, legendYStart); hctx.stroke();
+ // hctx.beginPath(); hctx.setLineDash([]); hctx.moveTo(legendX, legendYStart); hctx.lineTo(legendX + legendLineLength, legendYStart); hctx.stroke();
   hctx.font = '14px Arial'; hctx.textAlign = 'left';
-  hctx.fillText('Existing OFC Route', legendX + legendLineLength + 10, legendYStart + 5);
+ // hctx.fillText('Existing OFC Route', legendX + legendLineLength + 10, legendYStart + 5);
 
   // dashed
   hctx.beginPath(); hctx.setLineDash([10, 6]); hctx.moveTo(legendX, legendYStart + legendGap); hctx.lineTo(legendX + legendLineLength, legendYStart + legendGap); hctx.stroke();
-  hctx.setLineDash([]); hctx.fillText('Planned Rehab Portion', legendX + legendLineLength + 10, legendYStart + legendGap + 5);
+  hctx.setLineDash([]); hctx.fillText('Planned New Laying Portion', legendX + legendLineLength + 10, legendYStart + legendGap + 5);
 
   // bold solid for HDD
   hctx.beginPath(); hctx.lineWidth = 4; hctx.moveTo(legendX, legendYStart + 2 * legendGap); hctx.lineTo(legendX + legendLineLength, legendYStart + 2 * legendGap); hctx.stroke();
-  hctx.lineWidth = 2; hctx.fillText('Planned Rehab Length(HDD)', legendX + legendLineLength + 10, legendYStart + 2 * legendGap + 5);
+  hctx.lineWidth = 2; hctx.fillText('Planned New Laying Length(HDD)', legendX + legendLineLength + 10, legendYStart + 2 * legendGap + 5);
 
   // dashed thick for trenching
   hctx.beginPath(); hctx.setLineDash([15, 3]); hctx.lineWidth = 4; hctx.moveTo(legendX, legendYStart + 3 * legendGap); hctx.lineTo(legendX + legendLineLength, legendYStart + 3 * legendGap); hctx.stroke();
-  hctx.setLineDash([]); hctx.lineWidth = 2; hctx.fillText('Planned Rehab Length(Trenching)', legendX + legendLineLength + 10, legendYStart + 3 * legendGap + 5);
+  hctx.setLineDash([]); hctx.lineWidth = 2; hctx.fillText('Planned New Laying Length(Trenching)', legendX + legendLineLength + 10, legendYStart + 3 * legendGap + 5);
 
   // Signatories bottom-right of header
   hctx.font = '12px Arial';
@@ -368,7 +368,7 @@ function drawOFCLinesOnCtx(rctx, row, rowY, ofcGap, roadGap) {
         rctx.lineTo(segment.startX + segment.segWidth, ofcY);
         rctx.stroke();
         rctx.setLineDash([]);
-        if (segment.compressed) drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
+        //if (segment.compressed) drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
       }
     } else {
       rctx.setLineDash([]);
@@ -376,9 +376,9 @@ function drawOFCLinesOnCtx(rctx, row, rowY, ofcGap, roadGap) {
       rctx.moveTo(segment.startX, ofcY);
       rctx.lineTo(segment.startX + segment.segWidth, ofcY);
       rctx.stroke();
-      if (segment.compressed) {
-        drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
-      }
+      // if (segment.compressed) {
+      //   drawBreakSymbolOnCtx(rctx, segment.startX + segment.segWidth / 2, ofcY);
+      // }
     }
 
     // Draw landmark and coordinates parallel to each other with gap:
@@ -484,9 +484,9 @@ function drawBreakSymbolOnCtx(rctx, centerX, y) {
   // small erasure (destination-out) to indicate a gap in the OFC line
   rctx.globalCompositeOperation = 'destination-out';
   rctx.beginPath();
-  rctx.moveTo(centerX - 1, y - 2);
+  rctx.moveTo(centerX - 3, y - 2);
   rctx.lineTo(centerX + 7, y + 2);
-  rctx.lineWidth = 3;
+  rctx.lineWidth = 4;
   rctx.stroke();
   rctx.globalCompositeOperation = 'source-over';
   rctx.restore();
@@ -578,14 +578,14 @@ function drawCulvertOnCtx(rctx, startX, y, width, length) {
   rctx.restore();
 }
 
-// Lower OFC (rehab) rendering
+// Lower OFC (new) rendering
 function drawLowerOFCOnCtx(rctx, row, rowY, lowerOFCGap, roadGap) {
   const roadBottom = rowY + roadGap / 2;
   const lowerY = roadBottom + lowerOFCGap;
   rctx.fillStyle = 'black';
   rctx.font = 'bold 11px Arial';
   rctx.textAlign = 'center';
-  if (row && row.length) rctx.fillText('REHAB', Math.max(8, row[0].startX - 30), lowerY);
+  if (row && row.length) rctx.fillText('NEW', Math.max(8, row[0].startX - 30), lowerY);
   rctx.textAlign = 'left';
 
   for (const seg of row) {
@@ -726,7 +726,7 @@ downloadImageBtn.onclick = () => {
 
   // Use route name or default for filename
   const routeName = document.getElementById('routeName').value.trim() || 'OFC';
-  link.download = `${routeName}_Rehab_RouteDiagram.png`;
+  link.download = `${routeName}_New_RouteDiagram.png`;
 
   // Trigger download
   link.click();
@@ -910,5 +910,5 @@ async function exportToPDF() {
   // 7️⃣  SAVE PDF
   // ------------------------------------------------------------------
   const routeName = document.getElementById("routeName").value.trim() || "OFC";
-  pdf.save(`${routeName}_Rehab_RouteDiagram.pdf`);
+  pdf.save(`${routeName}_New_RouteDiagram.pdf`);
 }
