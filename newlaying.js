@@ -215,14 +215,32 @@ function createHeaderCanvas(rows) {
 
   // total new length
   let totalNewLength = 0;
+  let totalHDDLength = 0;
+  let totalTrenLength = 0;
+  let totalbridgeLength = 0;
+  let totalculvertLength = 0;
+  let totalbridge = 0;
+  let totalculvert = 0;
+
   let rkm = 0;
   for (const row of rows) {
     for (const seg of row) if (seg.condition === 'new') totalNewLength += seg.length;
+    for (const seg of row) if (seg.technique === 'hdd') totalHDDLength += seg.length;
+    for (const seg of row) if (seg.technique === 'trenching') totalTrenLength += seg.length;
+    for (const seg of row) if (seg.hasBridge) totalbridgeLength += seg.length;
+    for (const seg of row) if (seg.hasBridge) totalbridge += 1;
+    for (const seg of row) if (seg.hasCulvert) totalculvertLength += seg.length;
+    for (const seg of row) if (seg.hasCulvert) totalculvert += 1;
+
     for (const seg of row) rkm +=seg.length;
   }
-  hctx.font = '16px Arial';
-  hctx.fillText(`Total Route Length - ${rkm/1000} KM`, hc.width / 2, 55);
-  hctx.fillText(`Total New Laying Length - ${totalNewLength/1000} KM`, hc.width / 2, 75);
+  hctx.font = '14px Arial';
+  //hctx.fillText(`Total Route Length - ${rkm/1000} KM`, hc.width / 2, 55);
+  hctx.fillText(`Total New Laying Length - ${totalNewLength/1000} KM`, hc.width / 2, 55);
+  hctx.fillText(`Total HDD Length - ${totalHDDLength/1000} KM`, hc.width / 2, 70);
+  hctx.fillText(`Total Trenching Length - ${totalTrenLength/1000} KM`, hc.width / 2, 85);
+  hctx.fillText(`Total Length of Bridges - ${totalbridgeLength/1000} KM (Total Bridges - ${totalbridge} Nos)`, hc.width / 2, 100);
+  hctx.fillText(`Total Length of Culverts - ${totalculvertLength/1000} KM (Total Culverts - ${totalculvert} Nos)`, hc.width / 2, 115);
 
   // legends on left
   const legendX = 20;
